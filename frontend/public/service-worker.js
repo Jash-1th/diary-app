@@ -3,9 +3,9 @@ const urlsToCache = [
   '/',
   '/index.html',
   '/login-bg.jpg',
-  '/src/main.jsx',
-  '/src/App.jsx',
-  '/src/index.css'
+  '/home-bg.png',
+  '/diary-bg.jpg',
+  '/manifest.json'
 ];
 
 // Install event - cache assets
