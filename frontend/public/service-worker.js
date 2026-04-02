@@ -40,33 +40,50 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache or network
 self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Handle navigation requests - serve index.html for all routes
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      caches.match('/index.html')
+        .then((response) => {
+          return response || fetch('/index.html');
+        })
+        .catch(() => {
+          return new Response('Offline - No cached page available', {
+            headers: { 'Content-Type': 'text/plain' }
+          });
+        })
+    );
+    return;
+  }
+
+  // For other requests, try cache first then network
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Return cached version or fetch from network
         if (response) {
           return response;
         }
         return fetch(event.request)
           .then((response) => {
-            // Don't cache API calls
-            if (event.request.url.includes('/api/')) {
+            // Don't cache API calls or non-OK responses
+            if (!response || response.status !== 200 || response.type !== 'basic') {
               return response;
             }
             
-            // Cache other requests
             const responseToCache = response.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(event.request, responseToCache);
-            });
+            }).catch(() => {});
             return response;
-          })
-          .catch(() => {
-            // Return offline fallback if available
-            if (event.request.mode === 'navigate') {
-              return caches.match('/index.html');
-            }
           });
+      })
+      .catch(() => {
+        return new Response('Network error', { status: 408 });
       })
   );
 });
