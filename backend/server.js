@@ -68,7 +68,8 @@ app.post('/api/login', async (req, res) => {
 // 3. Auto-save / Get Today's Diary
 // This endpoint handles the "Only Today" and "Auto-save on type" logic
 app.post('/api/diary/today', verifyToken, async (req, res) => {
-  const today = new Date().toLocaleDateString('en-CA'); // Gets YYYY-MM-DD in local timezone
+  // Use Asia/Kolkata timezone for IST (UTC+5:30)
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
   const { content, background } = req.body;
 
   try {
