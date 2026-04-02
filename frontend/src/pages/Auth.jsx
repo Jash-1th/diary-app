@@ -17,17 +17,9 @@ export default function Auth() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      // Defer navigation to avoid render-phase issues
-      setTimeout(() => {
-        navigate('/dashboard', { replace: true });
-      }, 0);
+      navigate('/dashboard', { replace: true });
     }
-  }, [navigate]);
-
-  // Don't render login form if logged in (after all hooks)
-  if (localStorage.getItem('token')) {
-    return null;
-  }
+  }, []);
 
   useEffect(() => {
     const mode = searchParams.get('mode');
