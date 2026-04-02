@@ -17,7 +17,10 @@ export default function Auth() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      navigate('/dashboard', { replace: true });
+      // Defer navigation to avoid render-phase issues
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 0);
     }
   }, [navigate]);
 
