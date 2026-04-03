@@ -175,23 +175,29 @@ export default function WriteDiary() {
       setStatus('Saved');
     } catch (err) {
       setStatus('Error saving');
+      console.error('Save error:', err);
     }
   }, [selectedBg]);
 
+  // Use ref to always access latest save function
+  const saveRef = useRef(saveToDatabase);
+  useEffect(() => {
+    saveRef.current = saveToDatabase;
+  }, [saveToDatabase]);
+
   const autoSave = useCallback(
-    debounce(async (newContent) => {
-      // Use ref to get latest pages
+    debounce(async (newContent, pageIdx) => {
       const currentPages = [...pagesRef.current];
-      currentPages[currentPage - 1] = newContent;
-      await saveToDatabase(currentPages, newContent);
+      currentPages[pageIdx] = newContent;
+      await saveRef.current(currentPages, newContent);
     }, 1000),
-    [currentPage, saveToDatabase]
+    []
   );
 
   const handleChange = (e) => {
     setStatus('Typing...');
     setContent(e.target.value);
-    autoSave(e.target.value);
+    autoSave(e.target.value, currentPage - 1);
   };
 
   const isFirstPage = currentPage === 1;
@@ -394,7 +400,7 @@ export default function WriteDiary() {
                   <textarea
                     value={content}
                     onChange={handleChange}
-                    placeholder={`Page ${currentPage} - Pour your heart out here... it's auto-saving!`}
+                    placeholder={`Pour your heart out here... it's auto-saving!`}
                     className="flex-1 w-full h-full p-5 sm:p-6 bg-white/30 resize-none focus:outline-none text-[#3d2914] leading-loose text-2xl sm:text-3xl placeholder-[#5c4033] font-bold"
                     style={{ fontFamily: "'Caveat', cursive", lineHeight: '1.6' }}
                   />

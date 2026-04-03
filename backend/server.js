@@ -18,6 +18,7 @@ mongoose.connect(process.env.MONGO_URI)
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true },
   password: { type: String, required: true },
+  name: { type: String, default: '' }
 });
 const User = mongoose.model('User', UserSchema);
 
@@ -44,12 +45,12 @@ const verifyToken = (req, res, next) => {
 
 // --- ROUTES ---
 
-// 1. Auth: Signup (Simplified for brevity)
+// 1. Auth: Signup
 app.post('/api/signup', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, email } = req.body;
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
-  const user = new User({ username, password: hashedPassword });
+  const user = new User({ username, password: hashedPassword, email });
   await user.save();
   res.json({ message: 'User created' });
 });
@@ -62,7 +63,7 @@ app.post('/api/login', async (req, res) => {
   if (!validPass) return res.status(400).json({ error: 'Invalid password' });
   
   const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
-  res.json({ token, userId: user._id });
+  res.json({ token, userId: user._id, name: user.name });
 });
 
 // 3. Auto-save / Get Today's Diary
@@ -104,6 +105,16 @@ app.get('/api/diary/history', verifyToken, async (req, res) => {
     // Finds all diaries for this user and sorts them by date (newest first)
     const diaries = await Diary.find({ userId: req.user._id }).sort({ date: -1 });
     res.json(diaries);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. Get User Profile
+app.get('/api/user/profile', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

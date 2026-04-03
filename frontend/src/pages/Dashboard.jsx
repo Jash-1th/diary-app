@@ -8,6 +8,19 @@ import API_BASE_URL from '../config/api';
 export default function Dashboard() {
   const navigate = useNavigate();
   const [hasTodayDiary, setHasTodayDiary] = useState(false);
+  const [loadingButton, setLoadingButton] = useState(null); // 'write' or 'history'
+  const [userName, setUserName] = useState('');
+
+  // Get user name on mount
+  useEffect(() => {
+    const storedName = localStorage.getItem('userName');
+    const username = localStorage.getItem('username');
+    if (username) {
+      setUserName(username);
+    } else if (storedName) {
+      setUserName(storedName);
+    }
+  }, []);
 
   // Check if user has already written today
   useEffect(() => {
@@ -91,6 +104,21 @@ export default function Dashboard() {
             </motion.div>
 
             {/* Welcome Text */}
+            {userName && (
+              <motion.div
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.35, duration: 0.5 }}
+                className="mb-2"
+              >
+                <span 
+                  className="text-xl sm:text-2xl text-amber-200 font-medium drop-shadow-lg"
+                  style={{ fontFamily: "'Caveat', cursive" }}
+                >
+                  Dear {userName},
+                </span>
+              </motion.div>
+            )}
             <motion.h1 
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -123,26 +151,48 @@ export default function Dashboard() {
             >
               {/* Write Diary Button */}
               <motion.button 
-                onClick={() => navigate('/write')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="group bg-[#2c1810] text-white py-3 px-5 rounded-xl shadow-xl hover:shadow-2xl hover:bg-[#3d2418] transition-all flex items-center justify-center gap-2 text-lg sm:text-xl font-semibold border border-[#5c3a21] drop-shadow"
+                onClick={() => {
+                  if (loadingButton) return;
+                  setLoadingButton('write');
+                  navigate('/write');
+                }}
+                whileHover={{ scale: loadingButton ? 1 : 1.02 }}
+                whileTap={{ scale: loadingButton ? 1 : 0.98 }}
+                disabled={loadingButton !== null}
+                className="group bg-[#2c1810] text-white py-3 px-5 rounded-xl shadow-xl hover:shadow-2xl hover:bg-[#3d2418] transition-all flex items-center justify-center gap-2 text-lg sm:text-xl font-semibold border border-[#5c3a21] drop-shadow disabled:opacity-70 disabled:cursor-not-allowed"
                 style={{ fontFamily: "'Caveat', cursive" }}
               >
-                <Feather size={22} className="group-hover:rotate-12 transition-transform" />
-                <span>{hasTodayDiary ? 'Continue Your Diary Today' : "Write Today's Diary"}</span>
+                {loadingButton === 'write' ? (
+                  <span>Loading...</span>
+                ) : (
+                  <>
+                    <Feather size={22} className="group-hover:rotate-12 transition-transform" />
+                    <span>{hasTodayDiary ? 'Continue Your Diary Today' : "Write Today's Diary"}</span>
+                  </>
+                )}
               </motion.button>
 
               {/* View Diary Button */}
               <motion.button 
-                onClick={() => navigate('/history')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="group bg-[#8b4513] text-white py-3 px-5 rounded-xl shadow-lg hover:shadow-xl hover:bg-[#a0522d] transition-all flex items-center justify-center gap-2 text-lg sm:text-xl font-semibold border-2 border-[#c4b5a0] drop-shadow"
+                onClick={() => {
+                  if (loadingButton) return;
+                  setLoadingButton('history');
+                  navigate('/history');
+                }}
+                whileHover={{ scale: loadingButton ? 1 : 1.02 }}
+                whileTap={{ scale: loadingButton ? 1 : 0.98 }}
+                disabled={loadingButton !== null}
+                className="group bg-[#8b4513] text-white py-3 px-5 rounded-xl shadow-lg hover:shadow-xl hover:bg-[#a0522d] transition-all flex items-center justify-center gap-2 text-lg sm:text-xl font-semibold border-2 border-[#c4b5a0] drop-shadow disabled:opacity-70 disabled:cursor-not-allowed"
                 style={{ fontFamily: "'Caveat', cursive" }}
               >
-                <BookOpen size={22} className="group-hover:scale-110 transition-transform" />
-                <span>View Your Diaries</span>
+                {loadingButton === 'history' ? (
+                  <span>Loading...</span>
+                ) : (
+                  <>
+                    <BookOpen size={22} className="group-hover:scale-110 transition-transform" />
+                    <span>View Your Diaries</span>
+                  </>
+                )}
               </motion.button>
             </motion.div>
 

@@ -9,8 +9,9 @@ export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({ username: '', password: '' });
+  const [formData, setFormData] = useState({ username: '', password: '', email: '' });
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { showFlash } = useFlash();
 
   // Check if user is already logged in
@@ -36,26 +37,32 @@ export default function Auth() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     setError('');
+    setIsLoading(true);
     const endpoint = isLogin ? '/api/login' : '/api/signup';
 
     try {
-      // Assuming your backend runs on port 5000
       const { data } = await axios.post(`${API_BASE_URL}${endpoint}`, formData);
       
       if (isLogin) {
-        localStorage.setItem('token', data.token); // Store the JWT!
-        showFlash('Welcome back! Successfully logged in', 'success');
-        navigate('/dashboard'); // Route to the dashboard
-      } else {
-        // Auto-login after signup
         localStorage.setItem('token', data.token);
+        localStorage.setItem('userName', data.name || data.email || '');
+        localStorage.setItem('username', formData.username);
+        showFlash('Welcome back! Successfully logged in', 'success');
+        navigate('/dashboard');
+      } else {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userName', formData.email || '');
+        localStorage.setItem('username', formData.username);
         showFlash('Account created successfully! Welcome to your diary', 'success');
         navigate('/dashboard');
       }
     } catch (err) {
       setError(err.response?.data?.error || 'Something went wrong');
       showFlash(err.response?.data?.error || 'Login failed. Please try again.', 'error');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -98,6 +105,19 @@ export default function Auth() {
               data-lpignore="true"
               className="w-full px-4 py-3.5 bg-[#e6d2b5] rounded-lg border border-[#c4b5a0] text-black placeholder-[#6b5a45] focus:outline-none focus:ring-2 focus:ring-[#5c3a21] focus:border-[#5c3a21] transition-all shadow-sm"
             />
+            {!isLogin && (
+              <input
+                type="email"
+                name="email"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                autoComplete="off"
+                data-lpignore="true"
+                className="w-full px-4 py-3.5 bg-[#e6d2b5] rounded-lg border border-[#c4b5a0] text-black placeholder-[#6b5a45] focus:outline-none focus:ring-2 focus:ring-[#5c3a21] focus:border-[#5c3a21] transition-all shadow-sm"
+              />
+            )}
             <input
               type="password"
               name="password"
@@ -111,10 +131,11 @@ export default function Auth() {
             />
             <button 
               type="submit"
-              className="w-full bg-[#2c1810] text-[#f5f5dc] py-4 font-semibold mt-2 rounded-lg shadow-lg hover:bg-[#1a0f08] hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all border border-[#5c3a21]"
+              disabled={isLoading}
+              className="w-full bg-[#2c1810] text-[#f5f5dc] py-4 font-semibold mt-2 rounded-lg shadow-lg hover:bg-[#1a0f08] hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all border border-[#5c3a21] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
               style={{ fontFamily: "'Caveat', cursive", fontSize: '1.5rem' }}
             >
-              {isLogin ? 'Unlock Diary' : 'Sign Up'}
+              {isLoading ? 'Please wait...' : (isLogin ? 'Unlock Diary' : 'Sign Up')}
             </button>
           </form>
 
