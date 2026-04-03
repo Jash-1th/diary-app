@@ -26,6 +26,7 @@ export default function WriteDiary() {
   const [totalPages, setTotalPages] = useState(1);
   const [direction, setDirection] = useState(0);
   const [pages, setPages] = useState(['']);
+  const [isLoading, setIsLoading] = useState(true);
   const pagesRef = useRef(pages);
   const navigate = useNavigate();
 
@@ -78,6 +79,8 @@ export default function WriteDiary() {
         }
       } catch (err) {
         console.error("Failed to fetch today's diary", err);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchToday();
@@ -369,8 +372,18 @@ export default function WriteDiary() {
         {/* Writing Area */}
         <div className="flex-1 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
           <div className="relative w-full max-w-3xl h-full max-h-[70vh]">
+            {/* Loading Spinner */}
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center z-20">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                  className="w-12 h-12 border-4 border-[#e6d2b5] border-t-transparent rounded-full"
+                />
+              </div>
+            )}
             {/* Page Content */}
-            <div className="relative w-full h-full perspective-1000">
+            <div className={`relative w-full h-full perspective-1000 ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}>
               <AnimatePresence initial={false} custom={direction} mode="wait">
                 <motion.div
                   key={currentPage}
