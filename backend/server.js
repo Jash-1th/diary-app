@@ -74,7 +74,7 @@ app.get('/api/diary/today', verifyToken, async (req, res) => {
     if (diary) {
       res.json(diary);
     } else {
-      res.json({ content: '', background: 'soft-cream', pages: [''] });
+      res.json({ content: '', background: 'soft-cream' });
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -90,13 +90,17 @@ app.post('/api/diary/today', verifyToken, async (req, res) => {
   try {
     let diary = await Diary.findOne({ userId: req.user._id, date: today });
     
-    // Auto-saving (content is provided)
     if (diary) {
       diary.content = content;
       if (background) diary.background = background;
       await diary.save();
     } else {
-      diary = new Diary({ userId: req.user._id, content, date: today, background: background || 'soft-cream' });
+      diary = new Diary({ 
+        userId: req.user._id, 
+        content, 
+        date: today, 
+        background: background || 'soft-cream' 
+      });
       await diary.save();
     }
     

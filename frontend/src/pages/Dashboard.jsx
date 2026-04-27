@@ -26,7 +26,7 @@ export default function Dashboard() {
   useEffect(() => {
     const checkTodayDiary = async () => {
       try {
-        const { data } = await axios.post(`${API_BASE_URL}/api/diary/today`, {}, {
+        const { data } = await axios.get(`${API_BASE_URL}/api/diary/today`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         if (data && data.content && data.content.trim().length > 0) {

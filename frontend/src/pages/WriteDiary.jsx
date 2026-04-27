@@ -66,7 +66,7 @@ export default function WriteDiary() {
     }
   }, []);
 
-  // Fetch today's diary pages
+  // Fetch today's diary
   useEffect(() => {
     const fetchToday = async () => {
       try {
@@ -79,13 +79,8 @@ export default function WriteDiary() {
             setSelectedBg(data.background);
             localStorage.setItem('diaryBackground', data.background);
           }
-          if (data.content) {
-            // Split content into pages (or use as single page)
-            const contentPages = data.pages || [data.content];
-            setPages(contentPages);
-            setTotalPages(contentPages.length);
-            setContent(contentPages[0] || '');
-          }
+          // Load content (even if empty)
+          setContent(data.content || '');
         }
       } catch (err) {
         console.error("Failed to fetch today's diary", err);
@@ -108,7 +103,6 @@ export default function WriteDiary() {
       setStatus('Saving background...');
       await axios.post(`${API_BASE_URL}/api/diary/today`, { 
         content: content,
-        pages: pages,
         background: bgUrl
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -120,45 +114,34 @@ export default function WriteDiary() {
     }
   };
 
-  const prevPage = () => {
-    if (currentPage > 1) {
-      // Cancel any pending auto-save before navigating
-      autoSave.cancel();
-      
-      setDirection(-1);
-      // Save current page content to local state
-      const newPages = [...pages];
-      newPages[currentPage - 1] = content;
-      setPages(newPages);
-      // Go to previous page
-      setCurrentPage(prev => prev - 1);
-      setContent(newPages[currentPage - 2] || '');
+  const saveToDatabase = useCallback(async (contentToSave) => {
+    setStatus('Saving...');
+    try {
+      await axios.post(`${API_BASE_URL}/api/diary/today`, { 
+        content: contentToSave,
+        background: selectedBg
+      }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setStatus('Saved');
+    } catch (err) {
+      setStatus('Error saving');
+      console.error('Save error:', err);
     }
-  };
+  }, [selectedBg]);
 
-  const nextPage = () => {
-    // Cancel any pending auto-save before navigating
-    autoSave.cancel();
-    
-    setDirection(1);
-    // Save current page content to local state
-    const newPages = [...pages];
-    newPages[currentPage - 1] = content;
-    setPages(newPages);
-    
-    if (currentPage < totalPages) {
-      // Go to existing next page
-      setCurrentPage(prev => prev + 1);
-      setContent(newPages[currentPage] || '');
-    } else {
-      // Create new page
-      const updatedPages = [...newPages, ''];
-      setPages(updatedPages);
-      setTotalPages(prev => prev + 1);
-      setCurrentPage(prev => prev + 1);
-      setContent('');
-    }
-  };
+  // Use ref to always access latest save function
+  const saveRef = useRef(saveToDatabase);
+  useEffect(() => {
+    saveRef.current = saveToDatabase;
+  }, [saveToDatabase]);
+
+  // Create debounced autoSave function
+  const autoSaveRef = useRef(
+    debounce(async (newContent) => {
+      await saveRef.current(newContent);
+    }, 1000)
+  );
 
   const pageVariants = {
     enter: (direction) => ({
@@ -181,53 +164,12 @@ export default function WriteDiary() {
     })
   };
 
-  const saveToDatabase = useCallback(async (pagesToSave, contentToSave) => {
-    setStatus('Saving...');
-    try {
-      await axios.post(`${API_BASE_URL}/api/diary/today`, { 
-        content: contentToSave,
-        pages: pagesToSave,
-        background: selectedBg
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      setStatus('Saved');
-    } catch (err) {
-      setStatus('Error saving');
-      console.error('Save error:', err);
-    }
-  }, [selectedBg]);
-
-  // Use ref to always access latest save function
-  const saveRef = useRef(saveToDatabase);
-  useEffect(() => {
-    saveRef.current = saveToDatabase;
-  }, [saveToDatabase]);
-
-  const autoSave = useCallback(
-    debounce(async (newContent, pageIdx) => {
-      // Don't save if still loading initial data
-      if (isLoadingRef.current) return;
-      
-      // Don't save empty content
-      if (!newContent || newContent.trim().length === 0) return;
-      
-      const currentPages = [...pagesRef.current];
-      currentPages[pageIdx] = newContent;
-      await saveRef.current(currentPages, newContent);
-    }, 1000),
-    []
-  );
-
   const handleChange = (e) => {
     const newContent = e.target.value;
     setStatus('Typing...');
     setContent(newContent);
-    // Use ref to get correct page index at execution time
-    autoSave(newContent, currentPageRef.current - 1);
+    autoSaveRef.current(newContent);
   };
-
-  const isFirstPage = currentPage === 1;
 
   return (
     <div className="fixed inset-0 w-full h-full">

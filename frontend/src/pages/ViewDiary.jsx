@@ -41,14 +41,18 @@ export default function ViewDiary() {
     fetchHistory();
   }, []);
 
+  const toISTDateString = (date) => {
+    return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  };
+
   const hasDiaryEntry = (date) => {
-    const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
-    return diaries.some(d => new Date(d.date).toLocaleDateString('en-CA') === dateStr);
+    const dateStr = toISTDateString(date);
+    return diaries.some(d => toISTDateString(new Date(d.date)) === dateStr);
   };
 
   const getDiaryForDate = (date) => {
-    const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
-    return diaries.find(d => new Date(d.date).toLocaleDateString('en-CA') === dateStr);
+    const dateStr = toISTDateString(date);
+    return diaries.find(d => toISTDateString(new Date(d.date)) === dateStr);
   };
 
   const handleDateSelect = (date) => {
