@@ -66,8 +66,22 @@ app.post('/api/login', async (req, res) => {
   res.json({ token, userId: user._id, name: user.name });
 });
 
-// 3. Auto-save / Get Today's Diary
-// This endpoint handles the "Only Today" and "Auto-save on type" logic
+// 3a. Get Today's Diary (without creating empty entry)
+app.get('/api/diary/today', verifyToken, async (req, res) => {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  try {
+    const diary = await Diary.findOne({ userId: req.user._id, date: today });
+    if (diary) {
+      res.json(diary);
+    } else {
+      res.json({ content: '', background: 'soft-cream', pages: [''] });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3b. Auto-save Today's Diary
 app.post('/api/diary/today', verifyToken, async (req, res) => {
   // Use Asia/Kolkata timezone for IST (UTC+5:30)
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
@@ -76,20 +90,13 @@ app.post('/api/diary/today', verifyToken, async (req, res) => {
   try {
     let diary = await Diary.findOne({ userId: req.user._id, date: today });
     
-    // If auto-saving (content is provided)
-    if (content !== undefined) {
-      if (diary) {
-        diary.content = content;
-        if (background) diary.background = background;
-        await diary.save();
-      } else {
-        diary = new Diary({ userId: req.user._id, content, date: today, background: background || 'soft-cream' });
-        await diary.save();
-      }
-    } 
-    // If just fetching today's diary
-    else if (!diary) {
-      diary = new Diary({ userId: req.user._id, content: '', date: today, background: 'soft-cream' });
+    // Auto-saving (content is provided)
+    if (diary) {
+      diary.content = content;
+      if (background) diary.background = background;
+      await diary.save();
+    } else {
+      diary = new Diary({ userId: req.user._id, content, date: today, background: background || 'soft-cream' });
       await diary.save();
     }
     

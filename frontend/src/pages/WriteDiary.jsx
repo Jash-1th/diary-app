@@ -28,12 +28,22 @@ export default function WriteDiary() {
   const [pages, setPages] = useState(['']);
   const [isLoading, setIsLoading] = useState(true);
   const pagesRef = useRef(pages);
+  const currentPageRef = useRef(currentPage);
+  const isLoadingRef = useRef(isLoading);
   const navigate = useNavigate();
 
-  // Keep ref in sync with state
+  // Keep refs in sync with state
   useEffect(() => {
     pagesRef.current = pages;
   }, [pages]);
+
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
 
   // Load saved background and check if user has already selected one today
   useEffect(() => {
@@ -60,7 +70,7 @@ export default function WriteDiary() {
   useEffect(() => {
     const fetchToday = async () => {
       try {
-        const { data } = await axios.post(`${API_BASE_URL}/api/diary/today`, {}, {
+        const { data } = await axios.get(`${API_BASE_URL}/api/diary/today`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         if (data) {
@@ -112,8 +122,11 @@ export default function WriteDiary() {
 
   const prevPage = () => {
     if (currentPage > 1) {
+      // Cancel any pending auto-save before navigating
+      autoSave.cancel();
+      
       setDirection(-1);
-      // Save current page content
+      // Save current page content to local state
       const newPages = [...pages];
       newPages[currentPage - 1] = content;
       setPages(newPages);
@@ -124,8 +137,11 @@ export default function WriteDiary() {
   };
 
   const nextPage = () => {
+    // Cancel any pending auto-save before navigating
+    autoSave.cancel();
+    
     setDirection(1);
-    // Save current page content
+    // Save current page content to local state
     const newPages = [...pages];
     newPages[currentPage - 1] = content;
     setPages(newPages);
@@ -190,6 +206,12 @@ export default function WriteDiary() {
 
   const autoSave = useCallback(
     debounce(async (newContent, pageIdx) => {
+      // Don't save if still loading initial data
+      if (isLoadingRef.current) return;
+      
+      // Don't save empty content
+      if (!newContent || newContent.trim().length === 0) return;
+      
       const currentPages = [...pagesRef.current];
       currentPages[pageIdx] = newContent;
       await saveRef.current(currentPages, newContent);
@@ -198,9 +220,11 @@ export default function WriteDiary() {
   );
 
   const handleChange = (e) => {
+    const newContent = e.target.value;
     setStatus('Typing...');
-    setContent(e.target.value);
-    autoSave(e.target.value, currentPage - 1);
+    setContent(newContent);
+    // Use ref to get correct page index at execution time
+    autoSave(newContent, currentPageRef.current - 1);
   };
 
   const isFirstPage = currentPage === 1;
