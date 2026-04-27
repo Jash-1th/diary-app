@@ -27,7 +27,12 @@ export default function Dashboard() {
     const checkTodayDiary = async () => {
       try {
         const { data } = await axios.get(`${API_BASE_URL}/api/diary/today`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          headers: { 
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          },
+          params: { _t: Date.now() }
         });
         if (data && data.content && data.content.trim().length > 0) {
           setHasTodayDiary(true);

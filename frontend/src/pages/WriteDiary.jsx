@@ -71,7 +71,12 @@ export default function WriteDiary() {
     const fetchToday = async () => {
       try {
         const { data } = await axios.get(`${API_BASE_URL}/api/diary/today`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          headers: { 
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          },
+          params: { _t: Date.now() }
         });
         if (data) {
           // Load background from database if available
@@ -105,7 +110,11 @@ export default function WriteDiary() {
         content: content,
         background: bgUrl
       }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { 
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
       });
       setStatus('Saved');
     } catch (err) {
@@ -121,7 +130,11 @@ export default function WriteDiary() {
         content: contentToSave,
         background: selectedBg
       }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { 
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
       });
       setStatus('Saved');
     } catch (err) {

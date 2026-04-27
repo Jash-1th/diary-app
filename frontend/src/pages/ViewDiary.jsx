@@ -31,7 +31,12 @@ export default function ViewDiary() {
     const fetchHistory = async () => {
       try {
         const { data } = await axios.get(`${API_BASE_URL}/api/diary/history`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          headers: { 
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          },
+          params: { _t: Date.now() }
         });
         setDiaries(data);
       } catch (err) {
